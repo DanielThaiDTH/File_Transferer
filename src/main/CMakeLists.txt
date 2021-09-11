@@ -1,0 +1,5 @@
+add_library (NFT netfiletransferer.cpp netfiletransferer.h)
+target_link_directories (NFT PUBLIC ../filemanager PUBLIC ../connectors)
+include_directories (../filemanager ../connectors)
+target_link_libraries (NFT PUBLIC FM Client Server)
+target_compile_features (NFT PUBLIC cxx_std_17)
