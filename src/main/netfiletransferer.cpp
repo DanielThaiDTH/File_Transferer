@@ -271,15 +271,24 @@ uint32_t NetFileTransferer::receive()
 
 	size_t divs = total_size / size + ((total_size % size == 0) ? 0 : 1);
 	uint32_t count = 0;
-	int err;
+	int err = 1;
 
-	for (size_t i = 0u; i < divs; i++) {
+	/*for (size_t i = 0u; i < divs; i++) {
 		err = receive_chunk();
 
 		if (err < 0 || err == SOCKET_ERROR)
 			return 0u;
 		else if (err == 0)
 			break;
+
+		count += err;
+	}*/
+
+	while (err > 0 && count <= total_size) {
+		err = receive_chunk();
+
+		if (err < 0 || err == SOCKET_ERROR)
+			return 0u;
 
 		count += err;
 	}
