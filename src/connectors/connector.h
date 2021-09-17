@@ -7,6 +7,8 @@
 #include <windows.networking.sockets.h>
 #pragma comment(lib, "Ws2_32.lib")
 
+#define SD_BOTH 2
+
 /*Wraps a socket that is used to connect to another socket.
   Stores the IP address and the port. Class also inidcates if Winsock DLLs are 
   loaded. Is the responsiblity of the client to call WSACleanup()*/
@@ -35,6 +37,7 @@ public:
     virtual int change_conn(std::string addr, int port);
     /*Displays connection information*/
     virtual void display_info() const;
+    int get_port() const;
     virtual int send_msg(std::string msg) = 0;
     virtual int send_msg(std::vector<char> msg) = 0;
     virtual int receive_msg(std::string& msg) = 0;

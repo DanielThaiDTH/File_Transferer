@@ -21,8 +21,8 @@ class NetFileTransferer
 	/*Total size of the file*/
 	uint32_t total_size;
 	bool isSource;
-	uint32_t receive_chunk();
-	uint32_t send_chunk();
+	int receive_chunk();
+	int send_chunk();
 public:
 	NetFileTransferer() = delete;
 	NetFileTransferer(const NetFileTransferer&) = delete;

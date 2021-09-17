@@ -27,6 +27,7 @@ TCP_Client::TCP_Client() : TCP_Connector("0.0.0.0", 0), Client()
 TCP_Client::~TCP_Client()
 {
 	if (this->state != ClientState::ERR) {
+		shutdown(active_socket, SD_BOTH);
 		closesocket(active_socket);
 		this->state = ClientState::ERR;
 	}

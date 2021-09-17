@@ -52,8 +52,9 @@ TCP_Server::TCP_Server(std::string addr, int port) : TCP_Connector(addr, port)
 
 TCP_Server::~TCP_Server()
 {
-	if (this->state == ServerState::CONNECTED)
+	if (this->state == ServerState::CONNECTED) {
 		closesocket(conn_socket);
+	}
 
 	this->state = ServerState::ERR;
 }
@@ -128,6 +129,7 @@ bool TCP_Server::get_conn()
 void TCP_Server::disconnect()
 {
 	if (state == ServerState::CONNECTED) {
+		shutdown(conn_socket, SD_BOTH);
 		closesocket(conn_socket);
 		state = ServerState::LISTENING;
 	}

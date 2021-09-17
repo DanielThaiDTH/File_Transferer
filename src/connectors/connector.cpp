@@ -35,6 +35,7 @@ Connector::Connector(std::string ip, int port) : Connector()
 
 Connector::~Connector()
 {
+	shutdown(active_socket, SD_BOTH);
 	closesocket(active_socket);
 }
 
@@ -42,6 +43,12 @@ Connector::~Connector()
 bool Connector::isReady()
 {
 	return dlls_started;
+}
+
+
+int Connector::get_port() const
+{
+	return port;
 }
 
 
@@ -53,6 +60,7 @@ uint32_t Connector::get_buf_size()
 
 int Connector::change_conn(std::string addr, int port)
 {
+	shutdown(active_socket, SD_BOTH);
 	int err = closesocket(active_socket);
 
 	if (err != SOCKET_ERROR) {

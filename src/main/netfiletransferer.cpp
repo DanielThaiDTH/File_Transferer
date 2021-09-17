@@ -27,6 +27,9 @@ NetFileTransferer::NetFileTransferer(std::string dest_addr, int dest_port, bool 
 
 NetFileTransferer::~NetFileTransferer()
 {
+	if (!isSource)
+		dynamic_cast<TCP_Server*>(connector)->disconnect();
+
 	delete connector;
 }
 
@@ -65,6 +68,12 @@ void NetFileTransferer::set_port(int port)
 	} else {
 		std::cout << "No effect.\n";
 	}
+}
+
+
+int NetFileTransferer::get_port() const
+{
+	return connector->get_port();
 }
 
 
@@ -191,10 +200,10 @@ void NetFileTransferer::set_chunk_size(uint32_t chunk_size)
 }
 
 
-uint32_t NetFileTransferer::receive_chunk()
+int NetFileTransferer::receive_chunk()
 {
 	if (isSource)
-		return 0u;
+		return 0;
 
 	std::vector<char> chunk;
 
@@ -202,29 +211,27 @@ uint32_t NetFileTransferer::receive_chunk()
 	int count = conn->receive_msg(chunk);
 	fm.place(chunk.data(), chunk.size());
 
-	if (count < 0 || count == SOCKET_ERROR)
-		return 0u;
-	else
-		return (uint32_t) count;
+	if (count < 0 || count == SOCKET_ERROR) 
+		std::cout << "Error was " << WSAGetLastError();
+	
+	return count;
 }
 
 
-uint32_t NetFileTransferer::send_chunk()
+int NetFileTransferer::send_chunk()
 {
 	if (!isSource)
-		return 0u;
+		return 0;
 
 	std::string_view view = fm.retrieve(size);
 	std::vector<char> chunk(view.data(), view.data() + view.size());
 	TCP_Client* conn = dynamic_cast<TCP_Client*>(this->connector);
 	int count = conn->send_msg(chunk);
 
-	if (count < 0 || count == SOCKET_ERROR) {
+	if (count < 0 || count == SOCKET_ERROR)
 		std::cout << "Error was " << WSAGetLastError();
-		return 0u;
-	} else {
-		return (uint32_t)count;
-	}
+		
+	return count;
 }
 
 
@@ -236,7 +243,6 @@ uint32_t NetFileTransferer::send()
 	size_t divs = total_size / size + ((total_size%size == 0)? 0 : 1);
 	uint32_t count = 0;
 	int err;
-	std::string chunk;
 
 	for (size_t i = 0u; i < divs; i++) {
 		fm.set_position(size * i);
@@ -244,9 +250,10 @@ uint32_t NetFileTransferer::send()
 		/*chunk = std::string(fm.retrieve(size));
 		err = conn->send_msg(chunk);*/
 
-		if (err == 0 || err == SOCKET_ERROR) {
+		if (err < 0 || err == SOCKET_ERROR)
 			return 0u;
-		}
+		else if (err == 0)
+			break;
 
 		count += err;
 	}
@@ -269,8 +276,10 @@ uint32_t NetFileTransferer::receive()
 	for (size_t i = 0u; i < divs; i++) {
 		err = receive_chunk();
 
-		if (err == 0 || err == SOCKET_ERROR)
+		if (err < 0 || err == SOCKET_ERROR)
 			return 0u;
+		else if (err == 0)
+			break;
 
 		count += err;
 	}
