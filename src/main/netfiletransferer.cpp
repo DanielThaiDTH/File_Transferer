@@ -147,9 +147,9 @@ bool NetFileTransferer::info_exchange()
 					  << filename << std::endl
 					  << total_size << std::endl;
 		} else {
-			std::cout << "Data transfered.\n"
+			std::cout << "Meta-data transfered.\n"
 					  << filename << std::endl
-				      << total_size << std::endl;
+				      << total_size << " bytes to be sent." << std::endl;
 		}
 
 		return check_connection();
@@ -175,9 +175,9 @@ bool NetFileTransferer::info_exchange()
 		delete[] name;
 
 		
-		std::cout << "Data received.\n"
+		std::cout << "Meta-data received.\n"
 			<< writefile << std::endl
-			<< total_size << std::endl;
+			<< total_size << " bytes to be received." << std::endl;
 		
 
 		return check_connection();
