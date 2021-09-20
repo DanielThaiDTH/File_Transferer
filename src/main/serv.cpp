@@ -96,16 +96,20 @@ int manualOp()
 		nft = new NetFileTransferer(false);
 		nft->set_port(inputRange("Enter the server port number to listen on (1029 to 49150): ", 1024, 49150));
 	
-		if (nft->connect() && nft->check_connection()) {
-			if (nft->info_exchange()) {
-				size_t amount = nft->receive();
-				std::cout << amount << " bytes received.\n";
-				if (nft->save())
-					std::cout << "File " << nft->get_file() << " written.\n";
-			} else {
-				std::cout << "Could not exhange information.\n";
-			}
-		}
+		while (nft->connect()) {
+			while (nft->check_connection()) {
+				if (nft->info_exchange()) {
+					size_t amount = nft->receive();
+					std::cout << amount << " bytes received.\n";
+					if (nft->save())
+						std::cout << "File " << nft->get_file() << " written.\n";
+				} else {
+					std::cout << "Could not exhange information.\n";
+				}
+			} //File loop
+			std::cout << "Connection terminated by client.\n";
+		} //Connect loop
+		std::cout << "No more connections incoming, ending program\n";
 
 	} else {
 		std::cout << "No choice was given.";
@@ -132,8 +136,8 @@ int autoOp(bool isSrc, std::deque<char*>& files, int port, std::string addr = ""
 	if (isSrc) {
 		nft->set_destination(addr, port);
 
-		if (nft->connect() && nft->check_connection()) {
-			while (files.size() > 0) {
+		if (nft->connect()) {
+			while (files.size() > 0 && nft->check_connection()) {
 				nft->set_file(files.front());
 				std::cout << "Sending " << files.front() << std::endl;
 				files.pop_front();
@@ -149,6 +153,20 @@ int autoOp(bool isSrc, std::deque<char*>& files, int port, std::string addr = ""
 		}
 	} else {
 		nft->set_port(port);
+		while (nft->connect()) {
+			while (nft->check_connection()) {
+				if (nft->info_exchange()) {
+					size_t amount = nft->receive();
+					std::cout << amount << " bytes received.\n";
+					if (nft->save())
+						std::cout << "File " << nft->get_file() << " written.\n";
+				} else {
+					std::cout << "Could not exhange information.\n";
+				}
+			} //File loop
+			std::cout << "Connection terminated by client.\n";
+		} //Connect loop
+		std::cout << "No more connections incoming, ending program\n";
 	}
 
 	delete nft;

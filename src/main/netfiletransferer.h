@@ -16,8 +16,10 @@ class NetFileTransferer
 	TCP_Connector* connector = nullptr;
 	FileManager fm;
 	std::string writefile;
+
 	/*Indicates the size of each chunk sent*/
 	uint32_t size;
+
 	/*Total size of the file*/
 	uint32_t total_size;
 	bool isSource;
@@ -29,10 +31,13 @@ public:
 	NetFileTransferer(bool isSrc);
 	NetFileTransferer(std::string dest_addr, int dest_port, bool isSrc);
 	~NetFileTransferer();
+
 	/*Sets if the program is in source mode*/
 	void set_src(bool isSrc);
+
 	/*Sets the destination address of the server to send to*/
 	void set_destination(std::string dest_addr, int dest_port);
+
 	/*Sets the port of the server*/
 	void set_port(int port);
 	int get_port() const;
@@ -40,10 +45,14 @@ public:
 	std::string get_file() const;
 	bool connect();
 	bool check_connection();
+
 	/*Exchanges the file information to be transfered. 
 	File will be read and placed in memory on the source side.*/
 	bool info_exchange();
 	void set_chunk_size(uint32_t chunk_size);
+
+	/*Receives the file from the source. Returns the amount of bytes received. 
+	If an error occured, will return 0.*/
 	uint32_t receive();
 	uint32_t send();
 	bool save();
