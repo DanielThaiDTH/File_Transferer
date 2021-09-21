@@ -100,7 +100,10 @@ int TCP_Server::change_port(int new_port)
 
 bool TCP_Server::await_conn()
 {
-	if (state != ServerState::BINDED || listen(this->active_socket, 1) == SOCKET_ERROR) {
+	if (this->state == ServerState::LISTENING)
+		return true;
+
+	if (state != ServerState::BINDED || listen(this->active_socket, 10) == SOCKET_ERROR) {
 		std::cout << "Could not start to listen on this socket" << std::endl;
 		this->state = ServerState::ERR;
 		return false;
@@ -136,12 +139,25 @@ void TCP_Server::disconnect()
 }
 
 
+void TCP_Server::settimeout(uint32_t timeout)
+{
+	if (state == ServerState::CONNECTED) {
+		if (timeout == 0)
+			timeout = 60 * 1000;
+		setsockopt(conn_socket, SOL_SOCKET, SO_RCVTIMEO, reinterpret_cast<char*>(&timeout), sizeof(uint32_t));
+	}
+}
+
+
 int TCP_Server::send_msg(std::string msg)
 {
 	if (this->state != ServerState::CONNECTED)
 		return SOCKET_ERROR;
 
 	int err = send(conn_socket, msg.c_str(), msg.length(), 0);
+
+	if (err == SOCKET_ERROR)
+		disconnect();
 
 	return err;
 }
@@ -153,6 +169,9 @@ int TCP_Server::send_msg(std::vector<char> msg)
 		return SOCKET_ERROR;
 
 	int err = send(conn_socket, msg.data(), msg.size(), 0);
+
+	if (err == SOCKET_ERROR)
+		disconnect();
 
 	return err;
 }
@@ -166,6 +185,8 @@ int TCP_Server::receive_msg(std::string& msg)
 
 	if (recvsize != SOCKET_ERROR)
 		msg = std::string(RxBuffer, recvsize);
+	else
+		disconnect();
 
 	return recvsize;
 }
@@ -178,8 +199,10 @@ int TCP_Server::receive_msg(std::vector<char>& msg)
 
 	int recvsize = recv(conn_socket, RxBuffer, sizeof(RxBuffer), 0);
 
-	if (recvsize != SOCKET_ERROR) 
+	if (recvsize != SOCKET_ERROR)
 		msg.assign(RxBuffer, RxBuffer + recvsize);
+	else
+		disconnect();
 	
 
 	return recvsize;

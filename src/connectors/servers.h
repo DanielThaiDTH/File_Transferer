@@ -30,11 +30,17 @@ public:
 	~TCP_Server();
 	bool bind_socket() override;
 	int change_port(int new_port);
+	
 	/*Sets to listening state*/
 	bool await_conn();
 	bool get_conn();
+
 	/*Disconnects if there is an active connection. Sets to Listening state. Does nothing otherwise.*/
 	void disconnect() override;
+
+	/*Starts the timeout for the connection. If a timeout of 0 is set, blocking mode will be set. Time 
+	units are in milliseconds. */
+	void settimeout(uint32_t timeout);
 	int send_msg(std::string msg) override;
 	int send_msg(std::vector<char> msg) override;
 	int receive_msg(std::string& msg) override;

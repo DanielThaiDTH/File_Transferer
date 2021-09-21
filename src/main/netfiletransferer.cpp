@@ -97,7 +97,8 @@ bool NetFileTransferer::connect()
 	} else {
 		TCP_Server* conn = dynamic_cast<TCP_Server*>(this->connector);
 		if (conn->getState() == ServerState::LISTENING || conn->await_conn()) {
-			return conn->get_conn();
+			bool connCreated = conn->get_conn();
+			return connCreated;
 		} else {
 			return false;
 		}
@@ -108,6 +109,7 @@ bool NetFileTransferer::connect()
 bool NetFileTransferer::check_connection()
 {
 	std::string key;
+	int count;
 
 	if (isSource) {
 		TCP_Client* conn = dynamic_cast<TCP_Client*>(this->connector);
@@ -115,9 +117,14 @@ bool NetFileTransferer::check_connection()
 		conn->receive_msg(key);
 	} else {
 		TCP_Server* conn = dynamic_cast<TCP_Server*>(this->connector);
-		conn->receive_msg(key);
+		conn->settimeout(3000);
+		count = conn->receive_msg(key);
 		conn->send_msg(conn_id);
+		conn->settimeout(0);
+		if (count == 0)
+			conn->disconnect();
 	}
+
 
 	return key == conn_id;
 }
@@ -161,7 +168,7 @@ bool NetFileTransferer::info_exchange()
 				      << total_size << " bytes to be sent." << std::endl;
 		}
 
-		return check_connection();
+		return true;
 	} else {
 		TCP_Server* conn = dynamic_cast<TCP_Server*>(this->connector);
 		std::vector<char> packet;
@@ -189,7 +196,7 @@ bool NetFileTransferer::info_exchange()
 			<< total_size << " bytes to be received." << std::endl;
 		
 
-		return check_connection();
+		return true;
 	}
 }
 
@@ -269,20 +276,8 @@ uint32_t NetFileTransferer::receive()
 	if (isSource || total_size == 0)
 		return 0u;
 
-	size_t divs = total_size / size + ((total_size % size == 0) ? 0 : 1);
 	uint32_t count = 0;
 	int err = 1;
-
-	/*for (size_t i = 0u; i < divs; i++) {
-		err = receive_chunk();
-
-		if (err < 0 || err == SOCKET_ERROR)
-			return 0u;
-		else if (err == 0)
-			break;
-
-		count += err;
-	}*/
 
 	while (err > 0 && count <= total_size) {
 		err = receive_chunk();
