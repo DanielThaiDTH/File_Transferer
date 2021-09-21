@@ -1,6 +1,7 @@
 #include <iostream>
 #include <cstring>
 #include <cstdlib>
+#include <csignal>
 #include <string_view>
 #include <type_traits>
 #include <algorithm>
@@ -27,16 +28,18 @@ inputValid(std::string prompt, Targs... args)
 	std::string ans;
 	bool repeat = true;
 	
-	while (repeat) {
-		std::cout << prompt;
-		std::getline(std::cin, ans);
+	std::cout << prompt;
+	while (repeat && std::getline(std::cin, ans)) {
 
 		for (std::string item : valid_list) {
 			if (item == ans && item != "") {
 				repeat = false;
 				break;
+			} else {
+				std::cout << prompt;
 			}
 		}
+
 	}
 
 	return ans;
@@ -110,13 +113,13 @@ int manualOp()
 			std::cout << "Connection terminated by client.\n";
 		} //Connect loop
 		std::cout << "No more connections incoming, ending program\n";
+		delete nft;
 
 	} else {
-		std::cout << "No choice was given.";
+		std::cout << "No choice was given.\n";
 		return 1;
 	}
 
-	delete nft;
 	return 0;
 }
 
@@ -174,9 +177,27 @@ int autoOp(bool isSrc, std::deque<char*>& files, int port, std::string addr = ""
 }
 
 
+void stopHandle(int signum)
+{
+	if (signum == SIGABRT)
+		std::cout << "Program aborted.\n";
+	else if (signum == SIGINT)
+		std::cout << "Program interrupted.\n";
+	else if (signum == SIGTERM)
+		std::cout << "Program terminated.\n";
+
+	WSACleanup();
+	exit(signum);
+}
+
+
 int main(int argc, char* argv[])
 {
 	int exit_code = 0;
+	signal(SIGABRT, stopHandle);
+	signal(SIGINT, stopHandle);
+	signal(SIGTERM, stopHandle);
+
 	std::cout << "*****************************\n";
 	std::cout << "** File Transferer Program **\n";
 	std::cout << "*****************************\n\n";

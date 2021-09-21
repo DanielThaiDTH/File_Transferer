@@ -96,13 +96,10 @@ bool NetFileTransferer::connect()
 		return conn->connect_to();
 	} else {
 		TCP_Server* conn = dynamic_cast<TCP_Server*>(this->connector);
-		conn->settimeout(15 * 1000);
 		if (conn->getState() == ServerState::LISTENING || conn->await_conn()) {
 			bool connCreated = conn->get_conn();
-			conn->settimeout(0);
 			return connCreated;
 		} else {
-			conn->settimeout(0);
 			return false;
 		}
 	}
