@@ -112,6 +112,7 @@ int manualOp()
 		nft->set_port(inputRange("Enter the server port number to listen on (1029 to 49150): ", 1029, 49150));
 	
 		while (nft->connect()) {
+			std::cout << "\nConnected\n";
 			while (nft->check_connection()) {
 				if (nft->info_exchange()) {
 					uint32_t amount = nft->receive();

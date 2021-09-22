@@ -290,10 +290,6 @@ uint32_t NetFileTransferer::send() //5...
 		count += err;
 	}
 
-	//send blank msg to indicate end
-	//dynamic_cast<TCP_Client*>(connector)->send_msg("");
-	//std::this_thread::sleep_for(seconds(30));
-
 	fm.set_position(0);
 
 	return count;
