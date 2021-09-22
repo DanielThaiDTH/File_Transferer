@@ -129,6 +129,14 @@ bool TCP_Server::get_conn()
 }
 
 
+void TCP_Server::force_close()
+{
+	closesocket(conn_socket);
+	closesocket(active_socket);
+	state = ServerState::ERR;
+}
+
+
 void TCP_Server::disconnect()
 {
 	if (state == ServerState::CONNECTED) {
@@ -185,8 +193,10 @@ int TCP_Server::receive_msg(std::string& msg)
 
 	if (recvsize != SOCKET_ERROR)
 		msg = std::string(RxBuffer, recvsize);
-	else
+	else {
+		std::wprintf(L"Socket recv failed with 0x%x\n", WSAGetLastError());
 		disconnect();
+	}
 
 	return recvsize;
 }
@@ -201,9 +211,10 @@ int TCP_Server::receive_msg(std::vector<char>& msg)
 
 	if (recvsize != SOCKET_ERROR)
 		msg.assign(RxBuffer, RxBuffer + recvsize);
-	else
+	else {
+		std::wprintf(L"Socket recv failed with 0x%x\n", WSAGetLastError());
 		disconnect();
-	
+	}
 
 	return recvsize;
 }

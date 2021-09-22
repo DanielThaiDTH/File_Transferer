@@ -1,12 +1,17 @@
 #include <iostream>
 #include <string>
 #include <string_view>
+//#include <thread>
+//#include <chrono>
 #include "filemanager.h"
 #include "clients.h"
 #include "servers.h"
 
 #ifndef NETFILESTRANSFER_H
 #define NETFILETRANSFER_H
+
+#define DEFAULT_TO 60000
+//void wait_for(std::chrono::duration<int, std::milli> timeout, bool& toRunning, Connector* connector);
 
 /*Transfers a file to a remote address or receives a file from a remote address using TCP.
  If it is a source of the file, it will be a TCP client, otherwise a TCP server.*/
@@ -23,6 +28,8 @@ class NetFileTransferer
 	/*Total size of the file*/
 	uint32_t total_size;
 	bool isSource;
+	bool timeoutRunning = false;
+	//std::thread timeoutTh;
 	int receive_chunk();
 	int send_chunk();
 public:
@@ -45,6 +52,7 @@ public:
 	std::string get_file() const;
 	bool connect();
 	bool check_connection();
+	bool ack();
 
 	/*Exchanges the file information to be transfered. 
 	File will be read and placed in memory on the source side.*/

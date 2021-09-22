@@ -6,6 +6,7 @@
 #include <type_traits>
 #include <algorithm>
 #include <deque>
+#include <climits>
 #include "netfiletransferer.h"
 //#include <windows.networking.sockets.h>
 //#pragma comment(lib, "Ws2_32.lib")
@@ -35,11 +36,12 @@ inputValid(std::string prompt, Targs... args)
 			if (item == ans && item != "") {
 				repeat = false;
 				break;
-			} else {
-				std::cout << prompt;
 			}
 		}
 
+		if (repeat)
+			std::cout << prompt;
+		
 	}
 
 	return ans;
@@ -48,17 +50,26 @@ inputValid(std::string prompt, Targs... args)
 
 int inputRange(std::string prompt, int min, int max) 
 {
-	int ans = 0;
+	if (min > max) {
+		std::cout << "The minimum value pass to the inputRange function was \
+						larger than the maximum value.\n";
+		raise(SIGTERM);
+	}
+
+	int ans = INT_MIN;
 
 	while (true) {
 		std::cout << prompt;
-		std::cin >> ans;
+		if (!(std::cin >> ans)) {
+			std::cin.clear();
+		}
+		std::cin.ignore(1000, '\n');
 
 		if (ans >= min && ans <= max)
 			break;
+
 	}
 
-	std::cin.ignore(1000, '\n');
 	return ans;
 }
 
@@ -77,7 +88,7 @@ int manualOp()
 		
 		std::cout << "Enter server address to send to: ";
 		std::getline(std::cin, addr);
-		int dest_port = inputRange("Enter the server port number to send to (1029 to 49150): ", 1024, 49150);
+		int dest_port = inputRange("Enter the server port number to send to (1029 to 49150): ", 1029, 49150);
 		nft->set_destination(addr, dest_port);
 
 		if (nft->connect() && nft->check_connection()) {
@@ -87,22 +98,23 @@ int manualOp()
 			nft->set_file(ans);
 
 			if (nft->info_exchange()) {
-				size_t amount = nft->send();
+				uint32_t amount = nft->send();
 				std::cout << amount << " bytes sent.\n";
 			} else {
 				std::cout << "Could not exhange information.\n";
 			}
 		}
+		delete nft;
 
 	} else if (ans == "d") {
 		
 		nft = new NetFileTransferer(false);
-		nft->set_port(inputRange("Enter the server port number to listen on (1029 to 49150): ", 1024, 49150));
+		nft->set_port(inputRange("Enter the server port number to listen on (1029 to 49150): ", 1029, 49150));
 	
 		while (nft->connect()) {
 			while (nft->check_connection()) {
 				if (nft->info_exchange()) {
-					size_t amount = nft->receive();
+					uint32_t amount = nft->receive();
 					std::cout << amount << " bytes received.\n";
 					if (nft->save())
 						std::cout << "File " << nft->get_file() << " written.\n";
@@ -191,6 +203,37 @@ void stopHandle(int signum)
 }
 
 
+int testFunc()
+{
+	std::string ans = inputValid("Will this be the source or the destination? (s or d): ", "s", "d");
+
+	if (ans == "s") {
+		TCP_Client cl;
+		cl.change_conn("127.0.0.1", 5000);
+		cl.connect_to();
+		std::string smsg(9000, '*');
+		cl.send_msg(smsg);
+	} else if (ans == "d") {
+		TCP_Server sv;
+		sv.change_port(5000);
+		sv.bind_socket();
+		sv.await_conn();
+		sv.get_conn();
+		std::vector<char> msg, tmsg;
+		int cnt = 0, sum = 0;
+		do {
+			cnt = sv.receive_msg(tmsg);
+			msg.insert(msg.end(), tmsg.begin(), tmsg.end());
+			if (cnt > 0)
+				sum += cnt;
+		} while (cnt > 0);
+		std::cout << sum << " : " << msg.size() << std::endl;
+	}
+
+	return 0;
+}
+
+
 int main(int argc, char* argv[])
 {
 	int exit_code = 0;
@@ -226,11 +269,15 @@ int main(int argc, char* argv[])
 
 
 	if (argc < 3 || (isSrc && isDst) || (!isSrc && !isDst)) {
-		if (((isSrc && isDst) || (!isSrc && !isDst)) && argc != 1) 
+
+		if (((isSrc && isDst) || (!isSrc && !isDst)) && argc != 1) {
 			std::cout << "Improper arguments. Running manually.\n";
+		}
 		
 		exit_code = manualOp();
+
 	} else {
+
 		std::deque<char*> files;
 		if (isSrc) {
 			files.assign(args.cbegin() + 4, args.cend());
