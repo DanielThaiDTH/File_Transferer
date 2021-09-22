@@ -25,16 +25,23 @@ protected:
     Connector();
     Connector(std::string ip, int port);
 public:
+    
     /*Closes the active socket*/
     virtual ~Connector();
+    
     /*Checks if the Winsock DLL is loaded*/
     static bool isReady();
+
     /*Checks if the Connector is connected*/
     virtual bool isConnected() const = 0;
+    
     /*Starts the Winsock DLL*/
     static void start_dlls();
+    
     /*Changes the connection, returns WSA last error code, 0 for no error*/
     virtual int change_conn(std::string addr, int port);
+    virtual void settimeout(uint32_t timeout) = 0;
+
     /*Displays connection information*/
     virtual void display_info() const;
     int get_port() const;

@@ -12,6 +12,16 @@ ClientState Client::getState() const
 }
 
 
+void TCP_Client::settimeout(uint32_t timeout)
+{
+	if (state == ClientState::CONNECTED) {
+		if (timeout == 0)
+			timeout = 60 * 1000;
+		setsockopt(active_socket, SOL_SOCKET, SO_RCVTIMEO, reinterpret_cast<char*>(&timeout), sizeof(uint32_t));
+	}
+}
+
+
 /*TCP_Client*/
 TCP_Client::TCP_Client() : TCP_Connector("0.0.0.0", 0), Client()
 {
@@ -26,10 +36,12 @@ TCP_Client::TCP_Client() : TCP_Connector("0.0.0.0", 0), Client()
 
 TCP_Client::~TCP_Client()
 {
-	if (this->state != ClientState::ERR) {
-		shutdown(active_socket, SD_BOTH);
-		closesocket(active_socket);
-		this->state = ClientState::ERR;
+	if (state == ClientState::CONNECTED) {
+		std::string msg;
+		std::cout << "Closing connection.\n";
+		send_msg("end");
+		settimeout(1000);
+		while (receive_msg(msg) > 0);
 	}
 }
 

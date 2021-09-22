@@ -1,6 +1,8 @@
 #include <vector>
 #include "netfiletransferer.h"
 
+//using namespace std::chrono;
+
 NetFileTransferer::NetFileTransferer(bool isSrc)
 {
 	this->isSource = isSrc;
@@ -89,19 +91,62 @@ std::string NetFileTransferer::get_file() const
 }
 
 
+//void wait_for(duration<int, std::milli> timeout, bool& toRunning, Connector* connector)
+//{
+//	time_point<steady_clock> start = steady_clock::now();
+//	time_point<steady_clock> end;
+//	duration<int, std::milli> time_elapsed(0);
+//
+//	while (toRunning) {
+//		end = steady_clock::now();
+//		time_elapsed = duration_cast<milliseconds>(end - start);
+//		if (time_elapsed > timeout) {
+//			dynamic_cast<TCP_Server*>(connector)->force_close();
+//			std::cout << "Server waited too long, closing listening socket.\n";
+//			toRunning = false;
+//		}
+//		std::this_thread::sleep_for(milliseconds(50));
+//	}
+//}
+
+
 bool NetFileTransferer::connect()
 {
 	if (isSource) {
 		TCP_Client* conn = dynamic_cast<TCP_Client*>(this->connector);
-		return conn->connect_to();
+		return conn->connect_to(); //1
 	} else {
 		TCP_Server* conn = dynamic_cast<TCP_Server*>(this->connector);
+		/*timeoutRunning = true;
+		timeoutTh = std::thread(&wait_for, 
+								duration<int, std::milli>(DEFAULT_TO),
+								std::ref(timeoutRunning),
+								connector);*/
 		if (conn->getState() == ServerState::LISTENING || conn->await_conn()) {
-			bool connCreated = conn->get_conn();
+			bool connCreated = conn->get_conn(); //1
+			/*timeoutRunning = false;
+			timeoutTh.join();*/
 			return connCreated;
 		} else {
+			/*timeoutRunning = false;
+			timeoutTh.join();*/
 			return false;
 		}
+	}
+}
+
+
+bool NetFileTransferer::ack()
+{
+	if (isSource) {
+		std::string file_ack;
+		TCP_Client* conn = dynamic_cast<TCP_Client*>(this->connector);
+		conn->receive_msg(file_ack);
+		return file_ack == fm.getfile();
+	} else {
+		TCP_Server* conn = dynamic_cast<TCP_Server*>(this->connector);
+		int count = conn->send_msg(writefile);
+		return count > 0;
 	}
 }
 
@@ -113,18 +158,16 @@ bool NetFileTransferer::check_connection()
 
 	if (isSource) {
 		TCP_Client* conn = dynamic_cast<TCP_Client*>(this->connector);
-		conn->send_msg(conn_id);
-		conn->receive_msg(key);
+		conn->send_msg(conn_id); //2
+		conn->receive_msg(key); //3
 	} else {
 		TCP_Server* conn = dynamic_cast<TCP_Server*>(this->connector);
-		conn->settimeout(3000);
-		count = conn->receive_msg(key);
-		conn->send_msg(conn_id);
-		conn->settimeout(0);
+		count = conn->receive_msg(key); //2
+		conn->send_msg(conn_id); //3
+
 		if (count == 0)
 			conn->disconnect();
 	}
-
 
 	return key == conn_id;
 }
@@ -155,7 +198,7 @@ bool NetFileTransferer::info_exchange()
 		std::memcpy(data_ptr, &total_size, sizeof(uint32_t));
 		std::vector<char> info(size);
 		info.assign(packet, packet + packet_size);
-		int err = conn->send_msg(info);
+		int err = conn->send_msg(info); //4
 		delete[] packet;
 
 		if (err == SOCKET_ERROR || err == 0) {
@@ -172,7 +215,7 @@ bool NetFileTransferer::info_exchange()
 	} else {
 		TCP_Server* conn = dynamic_cast<TCP_Server*>(this->connector);
 		std::vector<char> packet;
-		int packet_size = conn->receive_msg(packet);
+		int packet_size = conn->receive_msg(packet); //4
 
 		if (packet_size == 0 || packet_size == SOCKET_ERROR) {
 			std::cout << "Information unable to be received.\n";
@@ -190,11 +233,9 @@ bool NetFileTransferer::info_exchange()
 		std::memcpy(&total_size, data_ptr, sizeof(uint32_t));
 		delete[] name;
 
-		
 		std::cout << "Meta-data received.\n"
 			<< writefile << std::endl
-			<< total_size << " bytes to be received." << std::endl;
-		
+			<< total_size << " bytes to be received." << std::endl;		
 
 		return true;
 	}
@@ -219,7 +260,7 @@ int NetFileTransferer::receive_chunk()
 	fm.place(chunk.data(), chunk.size());
 
 	if (count < 0 || count == SOCKET_ERROR) 
-		std::cout << "Error was " << WSAGetLastError();
+		std::wprintf(L"Socket recv failed with 0x%x\n", WSAGetLastError());
 	
 	return count;
 }
@@ -236,26 +277,24 @@ int NetFileTransferer::send_chunk()
 	int count = conn->send_msg(chunk);
 
 	if (count < 0 || count == SOCKET_ERROR)
-		std::cout << "Error was " << WSAGetLastError();
+		std::wprintf(L"Socket send failed with 0x%x\n", WSAGetLastError());
 		
 	return count;
 }
 
 
-uint32_t NetFileTransferer::send()
+uint32_t NetFileTransferer::send() //5...
 {
 	if (!isSource || total_size == 0)
 		return 0u;
 
-	size_t divs = total_size / size + ((total_size%size == 0)? 0 : 1);
+	uint32_t divs = total_size / size + ((total_size%size == 0)? 0 : 1);
 	uint32_t count = 0;
 	int err;
 
-	for (size_t i = 0u; i < divs; i++) {
+	for (uint32_t i = 0u; i < divs; i++) {
 		fm.set_position(size * i);
 		err = send_chunk();
-		/*chunk = std::string(fm.retrieve(size));
-		err = conn->send_msg(chunk);*/
 
 		if (err < 0 || err == SOCKET_ERROR)
 			return 0u;
@@ -265,13 +304,15 @@ uint32_t NetFileTransferer::send()
 		count += err;
 	}
 
+	//std::this_thread::sleep_for(seconds(30));
+
 	fm.set_position(0);
 
 	return count;
 }
 
 
-uint32_t NetFileTransferer::receive()
+uint32_t NetFileTransferer::receive() //5...
 {
 	if (isSource || total_size == 0)
 		return 0u;
