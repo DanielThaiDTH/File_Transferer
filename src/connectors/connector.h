@@ -38,7 +38,8 @@ public:
     /*Starts the Winsock DLL*/
     static void start_dlls();
     
-    /*Changes the connection, returns WSA last error code, 0 for no error*/
+    /*Changes the connection parameters, returns WSA last error code, 0 for no error.
+    Responsibility of client recreate socket with new parameters.*/
     virtual int change_conn(std::string addr, int port);
     virtual void settimeout(uint32_t timeout) = 0;
 

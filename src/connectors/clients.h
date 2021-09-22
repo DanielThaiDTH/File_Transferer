@@ -23,7 +23,8 @@ public:
 	TCP_Client();
 	TCP_Client(const TCP_Client& src) = delete;
 	~TCP_Client();
-	/*Changes connection parameters. Returns WSA last error code, 0 if no problem.*/
+	/*Changes connection parameters and also recreates the socket. 
+	Returns WSA last error code, 0 if no problem.*/
 	int change_conn(std::string addr, int port) override;
 	void settimeout(uint32_t timeout) override;
 	bool reconnect();

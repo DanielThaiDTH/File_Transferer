@@ -8,12 +8,13 @@ void wait_for(duration<int, std::milli> timeout, bool& toRunning, Connector* con
 	time_point<steady_clock> start = steady_clock::now();
 	time_point<steady_clock> end;
 	duration<int, std::milli> time_elapsed(0);
+	TCP_Server* serv = dynamic_cast<TCP_Server*>(connector);
 
-	while (toRunning) {
+	while (toRunning && serv) {
 		end = steady_clock::now();
 		time_elapsed = duration_cast<milliseconds>(end - start);
 		if (time_elapsed > timeout) {
-			dynamic_cast<TCP_Server*>(connector)->force_close();
+			serv->force_close();
 			std::cout << "Server waited too long, closing listening socket.\n";
 			toRunning = false;
 		}
@@ -169,8 +170,8 @@ bool NetFileTransferer::info_exchange()
 
 		std::string filename = fm.getfile();
 		total_size = fm.get_data_size();
-		uint32_t packet_size = sizeof(uint32_t) + filename.size() * sizeof(char) + sizeof(uint32_t);
-		uint32_t name_size = filename.size() * sizeof(char);
+		uint32_t name_size = static_cast<uint32_t>(filename.size()) * sizeof(char);
+		uint32_t packet_size = sizeof(uint32_t) + name_size + sizeof(uint32_t);
 		if (packet_size < 4)
 			packet_size = 4;
 		char* packet = new char[packet_size];
@@ -241,9 +242,8 @@ int NetFileTransferer::receive_chunk(uint32_t limit)
 
 	std::vector<char> chunk;
 
-	TCP_Server* conn = dynamic_cast<TCP_Server*>(this->connector);
-	int count = conn->receive_msg(chunk, limit);
-	fm.place(chunk.data(), chunk.size());
+	int count = connector->receive_msg(chunk, limit);
+	fm.place(chunk.data(), static_cast<uint32_t>(chunk.size()));
 
 	if (count < 0 || count == SOCKET_ERROR) 
 		std::wprintf(L"Socket recv failed with 0x%x\n", WSAGetLastError());
@@ -259,8 +259,7 @@ int NetFileTransferer::send_chunk()
 
 	std::string_view view = fm.retrieve(size);
 	std::vector<char> chunk(view.data(), view.data() + view.size());
-	TCP_Client* conn = dynamic_cast<TCP_Client*>(connector);
-	int count = conn->send_msg(chunk);
+	int count = connector->send_msg(chunk);
 
 	if (count < 0 || count == SOCKET_ERROR)
 		std::wprintf(L"Socket send failed with 0x%x\n", WSAGetLastError());
