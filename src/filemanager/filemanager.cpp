@@ -139,7 +139,7 @@ void FileManager::place(const char* bytes, uint32_t size)
 {
 	char* data_temp = nullptr;
 
-	if (!writemode)
+	if (!writemode || size == 0)
 		return;
 
 	if (data == nullptr) {
@@ -188,6 +188,7 @@ bool FileManager::write()
 		return false;
 	} else {
 		writestream.write(data, data_len);
+		writestream.flush();
 
 		return true;
 	}

@@ -33,6 +33,7 @@ public:
 	int send_msg(std::vector<char> msg) override;
 	int receive_msg(std::string& msg) override;
 	int receive_msg(std::vector<char>& msg) override;
+	int receive_msg(std::vector<char>& msg, uint32_t limit) override;
 	TCP_Client& operator=(const TCP_Client&) = delete;
 };
 

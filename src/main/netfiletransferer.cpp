@@ -1,8 +1,28 @@
 #include <vector>
 #include "netfiletransferer.h"
 
-//using namespace std::chrono;
+using namespace std::chrono;
 
+void wait_for(duration<int, std::milli> timeout, bool& toRunning, Connector* connector)
+{
+	time_point<steady_clock> start = steady_clock::now();
+	time_point<steady_clock> end;
+	duration<int, std::milli> time_elapsed(0);
+
+	while (toRunning) {
+		end = steady_clock::now();
+		time_elapsed = duration_cast<milliseconds>(end - start);
+		if (time_elapsed > timeout) {
+			dynamic_cast<TCP_Server*>(connector)->force_close();
+			std::cout << "Server waited too long, closing listening socket.\n";
+			toRunning = false;
+		}
+		std::this_thread::sleep_for(milliseconds(50));
+	}
+}
+
+
+//NetFileTransferer
 NetFileTransferer::NetFileTransferer(bool isSrc)
 {
 	this->isSource = isSrc;
@@ -91,25 +111,6 @@ std::string NetFileTransferer::get_file() const
 }
 
 
-//void wait_for(duration<int, std::milli> timeout, bool& toRunning, Connector* connector)
-//{
-//	time_point<steady_clock> start = steady_clock::now();
-//	time_point<steady_clock> end;
-//	duration<int, std::milli> time_elapsed(0);
-//
-//	while (toRunning) {
-//		end = steady_clock::now();
-//		time_elapsed = duration_cast<milliseconds>(end - start);
-//		if (time_elapsed > timeout) {
-//			dynamic_cast<TCP_Server*>(connector)->force_close();
-//			std::cout << "Server waited too long, closing listening socket.\n";
-//			toRunning = false;
-//		}
-//		std::this_thread::sleep_for(milliseconds(50));
-//	}
-//}
-
-
 bool NetFileTransferer::connect()
 {
 	if (isSource) {
@@ -117,36 +118,21 @@ bool NetFileTransferer::connect()
 		return conn->connect_to(); //1
 	} else {
 		TCP_Server* conn = dynamic_cast<TCP_Server*>(this->connector);
-		/*timeoutRunning = true;
-		timeoutTh = std::thread(&wait_for, 
+		timeoutRunning = true;
+		std::thread timeoutTh = std::thread(&wait_for, 
 								duration<int, std::milli>(DEFAULT_TO),
 								std::ref(timeoutRunning),
-								connector);*/
+								connector);
 		if (conn->getState() == ServerState::LISTENING || conn->await_conn()) {
 			bool connCreated = conn->get_conn(); //1
-			/*timeoutRunning = false;
-			timeoutTh.join();*/
+			timeoutRunning = false;
+			timeoutTh.join();
 			return connCreated;
 		} else {
-			/*timeoutRunning = false;
-			timeoutTh.join();*/
+			timeoutRunning = false;
+			timeoutTh.join();
 			return false;
 		}
-	}
-}
-
-
-bool NetFileTransferer::ack()
-{
-	if (isSource) {
-		std::string file_ack;
-		TCP_Client* conn = dynamic_cast<TCP_Client*>(this->connector);
-		conn->receive_msg(file_ack);
-		return file_ack == fm.getfile();
-	} else {
-		TCP_Server* conn = dynamic_cast<TCP_Server*>(this->connector);
-		int count = conn->send_msg(writefile);
-		return count > 0;
 	}
 }
 
@@ -248,7 +234,7 @@ void NetFileTransferer::set_chunk_size(uint32_t chunk_size)
 }
 
 
-int NetFileTransferer::receive_chunk()
+int NetFileTransferer::receive_chunk(uint32_t limit)
 {
 	if (isSource)
 		return 0;
@@ -256,7 +242,7 @@ int NetFileTransferer::receive_chunk()
 	std::vector<char> chunk;
 
 	TCP_Server* conn = dynamic_cast<TCP_Server*>(this->connector);
-	int count = conn->receive_msg(chunk);
+	int count = conn->receive_msg(chunk, limit);
 	fm.place(chunk.data(), chunk.size());
 
 	if (count < 0 || count == SOCKET_ERROR) 
@@ -273,7 +259,7 @@ int NetFileTransferer::send_chunk()
 
 	std::string_view view = fm.retrieve(size);
 	std::vector<char> chunk(view.data(), view.data() + view.size());
-	TCP_Client* conn = dynamic_cast<TCP_Client*>(this->connector);
+	TCP_Client* conn = dynamic_cast<TCP_Client*>(connector);
 	int count = conn->send_msg(chunk);
 
 	if (count < 0 || count == SOCKET_ERROR)
@@ -304,8 +290,6 @@ uint32_t NetFileTransferer::send() //5...
 		count += err;
 	}
 
-	//std::this_thread::sleep_for(seconds(30));
-
 	fm.set_position(0);
 
 	return count;
@@ -320,14 +304,17 @@ uint32_t NetFileTransferer::receive() //5...
 	uint32_t count = 0;
 	int err = 1;
 
-	while (err > 0 && count <= total_size) {
-		err = receive_chunk();
+	while (err > 0 && count < total_size) {
+		err = receive_chunk(total_size - count);
 
 		if (err < 0 || err == SOCKET_ERROR)
-			return 0u;
+			break;
 
 		count += err;
 	}
+
+	if (err == SOCKET_ERROR)
+		std::wprintf(L"Receive terminated with error 0x%x\n", WSAGetLastError());
 
 	return count;
 }

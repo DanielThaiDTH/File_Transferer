@@ -103,10 +103,17 @@ bool TCP_Server::await_conn()
 	if (this->state == ServerState::LISTENING)
 		return true;
 
-	if (state != ServerState::BINDED || listen(this->active_socket, 10) == SOCKET_ERROR) {
-		std::cout << "Could not start to listen on this socket" << std::endl;
+	if (listen(this->active_socket, 10) == SOCKET_ERROR) {
+		std::cout << "Could not start to listen on this socket\n";
 		this->state = ServerState::ERR;
 		return false;
+	} else if (state == ServerState::READY || state == ServerState::ERR) {
+		std::cout << "Socket is not in binded state\n";
+		return false;
+	} else if (state == ServerState::CONNECTED) {
+		std::cout << "Server is currently connected to a remote client.\n" 
+				  << "Breaking connection.\n";
+		disconnect();
 	}
 
 	this->state = ServerState::LISTENING;
@@ -212,6 +219,34 @@ int TCP_Server::receive_msg(std::vector<char>& msg)
 	if (recvsize != SOCKET_ERROR)
 		msg.assign(RxBuffer, RxBuffer + recvsize);
 	else {
+		std::wprintf(L"Socket recv failed with 0x%x\n", WSAGetLastError());
+		disconnect();
+	}
+
+	return recvsize;
+}
+
+int TCP_Server::receive_msg(std::vector<char>& msg, uint32_t limit)
+{
+	char* RxBuffer = nullptr;
+	int recvsize = 0;
+
+	if (limit < RECV_BUF_SIZE) {
+		RxBuffer = new char[limit];
+		msg.reserve(limit);
+		recvsize = recv(conn_socket, RxBuffer, limit, 0);
+	} else {
+		RxBuffer = new char[RECV_BUF_SIZE];
+		msg.reserve(RECV_BUF_SIZE);
+		recvsize = recv(conn_socket, RxBuffer, RECV_BUF_SIZE, 0);
+	}
+
+
+	if (recvsize != SOCKET_ERROR) {
+		msg.assign(RxBuffer, RxBuffer + recvsize);
+		delete[] RxBuffer;
+	} else {
+		delete[] RxBuffer;
 		std::wprintf(L"Socket recv failed with 0x%x\n", WSAGetLastError());
 		disconnect();
 	}

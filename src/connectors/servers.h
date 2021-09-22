@@ -31,7 +31,7 @@ public:
 	bool bind_socket() override;
 	int change_port(int new_port);
 	
-	/*Sets to listening state*/
+	/*Sets to listening state. If connect, breaks connection to start listening.*/
 	bool await_conn();
 	bool get_conn();
 
@@ -48,6 +48,7 @@ public:
 	int send_msg(std::vector<char> msg) override;
 	int receive_msg(std::string& msg) override;
 	int receive_msg(std::vector<char>& msg) override;
+	int receive_msg(std::vector<char>& msg, uint32_t limit) override;
 	TCP_Server& operator=(const TCP_Server&) = delete;
 };
 
