@@ -49,6 +49,7 @@ public:
     virtual int send_msg(std::vector<char> msg) = 0;
     virtual int receive_msg(std::string& msg) = 0;
     virtual int receive_msg(std::vector<char>& msg) = 0;
+    virtual int receive_msg(std::vector<char>& msg, uint32_t limit) = 0;
     /*Returns the receive buffer size*/
     static uint32_t get_buf_size();
 };

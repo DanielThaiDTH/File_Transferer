@@ -218,6 +218,34 @@ int TCP_Server::receive_msg(std::vector<char>& msg)
 
 	return recvsize;
 }
+
+int TCP_Server::receive_msg(std::vector<char>& msg, uint32_t limit)
+{
+	char* RxBuffer = nullptr;
+	int recvsize = 0;
+
+	if (limit < RECV_BUF_SIZE) {
+		RxBuffer = new char[limit];
+		msg.reserve(limit);
+		recvsize = recv(conn_socket, RxBuffer, limit, 0);
+	} else {
+		RxBuffer = new char[RECV_BUF_SIZE];
+		msg.reserve(RECV_BUF_SIZE);
+		recvsize = recv(conn_socket, RxBuffer, RECV_BUF_SIZE, 0);
+	}
+
+
+	if (recvsize != SOCKET_ERROR) {
+		msg.assign(RxBuffer, RxBuffer + recvsize);
+		delete[] RxBuffer;
+	} else {
+		delete[] RxBuffer;
+		std::wprintf(L"Socket recv failed with 0x%x\n", WSAGetLastError());
+		disconnect();
+	}
+
+	return recvsize;
+}
 /***TCP Server***/
 
 
