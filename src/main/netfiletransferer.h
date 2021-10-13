@@ -44,7 +44,7 @@ public:
 	/*Sets the destination address of the server to send to*/
 	void set_destination(std::string dest_addr, int dest_port);
 
-	/*Sets the port of the server*/
+	/*Sets the port of the server and binds the socket.*/
 	void set_port(int port);
 	int get_port() const;
 	void set_file(std::string filepath);

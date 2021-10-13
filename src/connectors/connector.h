@@ -4,10 +4,14 @@
 #include <string>
 #include <iostream>
 #include <vector>
-#include <windows.networking.sockets.h>
+//#include <windows.networking.sockets.h>
+#include <WinSock2.h>
+#include <MSWSock.h>
 #pragma comment(lib, "Ws2_32.lib")
 
-#define SD_BOTH 2
+//disables winsock deprecated warnings _WINSOCK_DEPRECATED_NO_WARNINGS
+#pragma warning(disable: 4996)
+//#define SD_BOTH 2
 
 /*Wraps a socket that is used to connect to another socket.
   Stores the IP address and the port. Class also inidcates if Winsock DLLs are 

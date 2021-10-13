@@ -62,6 +62,8 @@ TCP_Server::~TCP_Server()
 
 bool TCP_Server::bind_socket()
 {
+	struct sockaddr_in info;
+	int info_size = sizeof(info);
 	if (state != ServerState::ERR) {
 		if (bind(this->active_socket, (struct sockaddr*)&SvrAddr,
 			sizeof(SvrAddr)) == SOCKET_ERROR) {
@@ -69,6 +71,11 @@ bool TCP_Server::bind_socket()
 			return false;
 		} else {
 			state = ServerState::BINDED;
+			getsockname(active_socket, (struct sockaddr *)&info, &info_size);
+			port = ntohs(info.sin_port);
+			std::cout << port << std::endl;
+			std::cout << info_size << std::endl;
+
 			return true;
 		}
 	}
@@ -169,7 +176,7 @@ int TCP_Server::send_msg(std::string msg)
 	if (this->state != ServerState::CONNECTED)
 		return SOCKET_ERROR;
 
-	int err = send(conn_socket, msg.c_str(), msg.length(), 0);
+	int err = send(conn_socket, msg.c_str(), (int) msg.length(), 0);
 
 	if (err == SOCKET_ERROR)
 		disconnect();
@@ -183,7 +190,7 @@ int TCP_Server::send_msg(std::vector<char> msg)
 	if (this->state != ServerState::CONNECTED)
 		return SOCKET_ERROR;
 
-	int err = send(conn_socket, msg.data(), msg.size(), 0);
+	int err = send(conn_socket, msg.data(), (int) msg.size(), 0);
 
 	if (err == SOCKET_ERROR)
 		disconnect();
@@ -343,7 +350,7 @@ void UDP_Server::disconnect()
 int UDP_Server::send_msg(std::string msg)
 {
 	if (state == ServerState::BINDED) {
-		int err = sendto(this->active_socket, msg.c_str(), msg.length(), 0,
+		int err = sendto(this->active_socket, msg.c_str(), (int) msg.length(), 0,
 			(struct sockaddr*)&CltAddr, sizeof(CltAddr));
 
 		if (err == SOCKET_ERROR && WSAGetLastError() == WSAENOTSOCK)
@@ -361,7 +368,7 @@ int UDP_Server::send_msg(std::string msg)
 int UDP_Server::send_msg(std::vector<char> msg)
 {
 	if (state == ServerState::BINDED) {
-		int err = sendto(this->active_socket, msg.data(), msg.size(), 0,
+		int err = sendto(this->active_socket, msg.data(), (int) msg.size(), 0,
 			(struct sockaddr*)&CltAddr, sizeof(CltAddr));
 
 		if (err == SOCKET_ERROR && WSAGetLastError() == WSAENOTSOCK)
@@ -393,7 +400,7 @@ int UDP_Server::receive_msg(std::string& msg)
 	char* RxBuffer = new char[data_size];
 	std::memset(RxBuffer, 0, data_size);
 
-	int err = recvfrom(this->active_socket, RxBuffer, data_size, 0,
+	int err = recvfrom(this->active_socket, RxBuffer, (int) data_size, 0,
 		(struct sockaddr*)&CltAddr, &addr_len);
 
 	if (err != SOCKET_ERROR)
@@ -413,7 +420,7 @@ int UDP_Server::receive_msg(std::vector<char>& msg)
 	std::memset(RxBuffer, 0, data_size);
 	msg.reserve(data_size);
 
-	int err = recvfrom(this->active_socket, RxBuffer, data_size, 0,
+	int err = recvfrom(this->active_socket, RxBuffer, (int) data_size, 0,
 		(struct sockaddr*)&CltAddr, &addr_len);
 
 	if (err != SOCKET_ERROR)

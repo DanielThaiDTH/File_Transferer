@@ -136,10 +136,10 @@ int manualOp()
 
 	} else {
 		std::cout << "No choice was given.\n";
-		return 1;
+		return EXIT_FAILURE;
 	}
 
-	return 0;
+	return EXIT_SUCCESS;
 }
 
 
@@ -156,6 +156,7 @@ int autoOp(bool isSrc, std::deque<char*>& files, int port, std::string addr = ""
 	NetFileTransferer* nft = new NetFileTransferer(isSrc);
 
 	if (isSrc) {
+		std::cout << "Sending to " << addr << " on port " << port << ".\n";
 		nft->set_destination(addr, port);
 
 		if (nft->connect()) {
@@ -179,7 +180,7 @@ int autoOp(bool isSrc, std::deque<char*>& files, int port, std::string addr = ""
 	}
 
 	delete nft;
-	return 0;
+	return EXIT_SUCCESS;
 }
 
 
@@ -239,9 +240,10 @@ int main(int argc, char* argv[])
 	std::cout << "** File Transferer Program **\n";
 	std::cout << "*****************************\n\n";
 	std::vector<char*> args(argv, argv + argc);
+	std::deque<char*> files;
 
 	if (argc > 1 && std::strcmp(args[1], "help") == 0) {
-		std::cout << "Usage: " << args[0] << " [-s] [-d] [Port] [Address]\n";
+		std::cout << "Usage: " << args[0] << " [-s]|[-d] [Port] [Address]\n";
 		std::cout << "Use -s or s to set as a file source. "
 			<< "Use -d or d to set as a file destination. "
 			<< "Can only set source or destination exclusvely. "
@@ -251,6 +253,7 @@ int main(int argc, char* argv[])
 			<< "require manual input of information.\n";
 	}
 
+	//Options tests
 	auto src_opt = [](const char* arg) -> bool {
 		return std::strcmp(arg, "-s") == 0 || std::strcmp(arg, "s") == 0;
 	};
@@ -262,7 +265,7 @@ int main(int argc, char* argv[])
 	bool isDst = std::any_of(args.cbegin(), args.cend(), dest_opt);
 
 
-	if (argc < 3 || (isSrc && isDst) || (!isSrc && !isDst)) {
+	if ((argc < 2 || argc == 2 && !isDst) || (isSrc && isDst) || (!isSrc && !isDst)) {
 
 		if (((isSrc && isDst) || (!isSrc && !isDst)) && argc != 1) {
 			std::cout << "Improper arguments. Running manually.\n";
@@ -272,7 +275,6 @@ int main(int argc, char* argv[])
 
 	} else {
 
-		std::deque<char*> files;
 		if (isSrc) {
 			files.assign(args.cbegin() + 4, args.cend());
 			if (files.size() > 0)
@@ -280,11 +282,8 @@ int main(int argc, char* argv[])
 			else 
 				exit_code = NO_FILES;
 		} else {
-			files.assign(args.cbegin() + 3, args.cend());
-			if (files.size() > 0)
-				exit_code = autoOp(isSrc, files, std::atoi(args[2]));
-			else
-				exit_code = NO_FILES;
+			int port_no = (argc == 2) ? 0 : std::atoi(args[2]);
+			exit_code = autoOp(isSrc, files, port_no);
 		}
 	}
 

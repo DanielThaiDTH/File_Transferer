@@ -88,6 +88,8 @@ void NetFileTransferer::set_port(int port)
 
 		if (err != 0 || !conn->bind_socket())
 			std::cout << "Could not start server.\n";
+		else
+			std::cout << "Listening on port " << conn->get_port() << ".\n";
 	} else {
 		std::cout << "No effect.\n";
 	}
