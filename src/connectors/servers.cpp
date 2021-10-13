@@ -73,8 +73,6 @@ bool TCP_Server::bind_socket()
 			state = ServerState::BINDED;
 			getsockname(active_socket, (struct sockaddr *)&info, &info_size);
 			port = ntohs(info.sin_port);
-			std::cout << port << std::endl;
-			std::cout << info_size << std::endl;
 
 			return true;
 		}

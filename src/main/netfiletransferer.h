@@ -17,7 +17,7 @@ void wait_for(std::chrono::duration<int, std::milli> timeout, bool& toRunning, C
  If it is a source of the file, it will be a TCP client, otherwise a TCP server.*/
 class NetFileTransferer
 {
-	const std::string conn_id = "FTv0.5";
+	const std::string conn_id = "FTv0.6";
 	TCP_Connector* connector = nullptr;
 	FileManager fm;
 	std::string writefile;

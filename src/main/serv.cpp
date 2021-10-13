@@ -265,9 +265,9 @@ int main(int argc, char* argv[])
 	bool isDst = std::any_of(args.cbegin(), args.cend(), dest_opt);
 
 
-	if ((argc < 2 || argc == 2 && !isDst) || (isSrc && isDst) || (!isSrc && !isDst)) {
+	if ((argc < 2 || argc == 2 && isSrc) || (isSrc && isDst) || (!isSrc && !isDst)) {
 
-		if (((isSrc && isDst) || (!isSrc && !isDst)) && argc != 1) {
+		if ((isSrc && isDst || !isSrc && !isDst || argc == 2 && isSrc) && argc != 1) {
 			std::cout << "Improper arguments. Running manually.\n";
 		}
 		

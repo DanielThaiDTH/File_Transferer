@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 
 #Project Name
-project(File_Transfer VERSION 0.5
+project(File_Transfer VERSION 0.6
 					  DESCRIPTION "CLI program for transferring files."
 					  LANGUAGES CXX)
 
