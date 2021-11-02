@@ -15,7 +15,7 @@ void wait_for(std::chrono::duration<int, std::milli> timeout, bool& toRunning, T
 
 /*Transfers a file to a remote address or receives a file from a remote address using TCP.
  If it is a source of the file, it will be a TCP client, otherwise a TCP server.*/
-class NetFileTransferer
+class NetFileTransferrer
 {
 	const std::string conn_id = "FTv0.6";
 	TCP_Connector* connector = nullptr;
@@ -32,11 +32,11 @@ class NetFileTransferer
 	int receive_chunk(uint32_t limit);
 	int send_chunk();
 public:
-	NetFileTransferer() = delete;
-	NetFileTransferer(const NetFileTransferer&) = delete;
-	NetFileTransferer(bool isSrc);
-	NetFileTransferer(std::string dest_addr, int dest_port, bool isSrc);
-	~NetFileTransferer();
+	NetFileTransferrer() = delete;
+	NetFileTransferrer(const NetFileTransferrer&) = delete;
+	NetFileTransferrer(bool isSrc);
+	NetFileTransferrer(std::string dest_addr, int dest_port, bool isSrc);
+	~NetFileTransferrer();
 
 	/*Sets if the program is in source mode*/
 	void set_src(bool isSrc);

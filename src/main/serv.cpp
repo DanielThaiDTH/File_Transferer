@@ -93,7 +93,7 @@ std::deque<const char*> readFileList(std::string filename)
 }
 
 
-void destConnectionLoop(NetFileTransferer* nft)
+void destConnectionLoop(NetFileTransferrer* nft)
 {
 	while (nft->connect()) {
 		std::cout << "\nConnected\n";
@@ -117,14 +117,14 @@ void destConnectionLoop(NetFileTransferer* nft)
 int manualOp()
 {
 	std::string res;
-	NetFileTransferer* nft = nullptr;
+	NetFileTransferrer* nft = nullptr;
 
 	std::string ans = inputValid("Will this be the source or the destination? (s or d): ", "s", "d");
 
 	if (ans == "s") {
 		
 		std::string addr;
-		nft = new NetFileTransferer(true);
+		nft = new NetFileTransferrer(true);
 		
 		std::cout << "Enter server address to send to: ";
 		std::getline(std::cin, addr);
@@ -148,7 +148,7 @@ int manualOp()
 
 	} else if (ans == "d") {
 		
-		nft = new NetFileTransferer(false);
+		nft = new NetFileTransferrer(false);
 		nft->set_port(inputRange("Enter the server port number to listen on (1029 to 49150): ", 1029, 49150));
 		destConnectionLoop(nft);
 		
@@ -173,7 +173,7 @@ int autoOp(bool isSrc, std::deque<const char*>& files, int port, std::string add
 		isRandPort = true;
 	}
 
-	NetFileTransferer* nft = new NetFileTransferer(isSrc);
+	NetFileTransferrer* nft = new NetFileTransferrer(isSrc);
 
 	if (isSrc) {
 		std::cout << "Sending to " << addr << " on port " << port << ".\n";
@@ -257,7 +257,7 @@ int main(int argc, const char* argv[])
 	signal(SIGTERM, stopHandle);
 
 	std::cout << "*****************************\n";
-	std::cout << "** File Transferer Program **\n";
+	std::cout << "** File Transferrer Program **\n";
 	std::cout << "*****************************\n\n";
 	std::vector<const char*> args(argv, argv + argc);
 	std::deque<const char*> files;
@@ -269,7 +269,10 @@ int main(int argc, const char* argv[])
 			<< "Can only set source or destination exclusvely. "
 			<< "If using arguments, port number and "
 			<< "destination address (for source option) "
-			<< "must be provided. Running with no args will "
+			<< "must be provided. Use -f to specify a text file "
+			<< "containing a list of files to transfer. Only "
+			<< "to be used when running as a file source. "
+			<< "Running with no args will "
 			<< "require manual input of information.\n";
 	}
 

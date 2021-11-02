@@ -23,7 +23,7 @@ void wait_for(duration<int, std::milli> timeout, bool& toRunning, TCP_Server* se
 
 
 //NetFileTransferer
-NetFileTransferer::NetFileTransferer(bool isSrc)
+NetFileTransferrer::NetFileTransferrer(bool isSrc)
 {
 	this->isSource = isSrc;
 	this->total_size = 0;
@@ -40,14 +40,14 @@ NetFileTransferer::NetFileTransferer(bool isSrc)
 }
 
 
-NetFileTransferer::NetFileTransferer(std::string dest_addr, int dest_port, bool isSrc) 
-	: NetFileTransferer(isSrc)
+NetFileTransferrer::NetFileTransferrer(std::string dest_addr, int dest_port, bool isSrc) 
+	: NetFileTransferrer(isSrc)
 {
 	set_destination(dest_addr, dest_port);
 }
 
 
-NetFileTransferer::~NetFileTransferer()
+NetFileTransferrer::~NetFileTransferrer()
 {
 	if (!isSource)
 		dynamic_cast<TCP_Server*>(connector)->disconnect();
@@ -56,7 +56,7 @@ NetFileTransferer::~NetFileTransferer()
 }
 
 
-void NetFileTransferer::set_src(bool isSrc)
+void NetFileTransferrer::set_src(bool isSrc)
 {
 	this->isSource = isSrc;
 
@@ -65,7 +65,7 @@ void NetFileTransferer::set_src(bool isSrc)
 }
 
 
-void NetFileTransferer::set_destination(std::string dest_addr, int dest_port)
+void NetFileTransferrer::set_destination(std::string dest_addr, int dest_port)
 {
 	if (isSource) {
 		TCP_Client* conn = dynamic_cast<TCP_Client*>(this->connector);
@@ -79,7 +79,7 @@ void NetFileTransferer::set_destination(std::string dest_addr, int dest_port)
 }
 
 
-void NetFileTransferer::set_port(int port)
+void NetFileTransferrer::set_port(int port)
 {
 	if (!isSource) {
 		TCP_Server* conn = dynamic_cast<TCP_Server*>(this->connector);
@@ -95,25 +95,25 @@ void NetFileTransferer::set_port(int port)
 }
 
 
-int NetFileTransferer::get_port() const
+int NetFileTransferrer::get_port() const
 {
 	return connector->get_port();
 }
 
 
-void NetFileTransferer::set_file(std::string filepath)
+void NetFileTransferrer::set_file(std::string filepath)
 {
 	fm.setfile(filepath);
 }
 
 
-std::string NetFileTransferer::get_file() const
+std::string NetFileTransferrer::get_file() const
 {
 	return fm.getfile();
 }
 
 
-bool NetFileTransferer::connect()
+bool NetFileTransferrer::connect()
 {
 	if (isSource) {
 		TCP_Client* conn = dynamic_cast<TCP_Client*>(this->connector);
@@ -139,7 +139,7 @@ bool NetFileTransferer::connect()
 }
 
 
-bool NetFileTransferer::check_connection()
+bool NetFileTransferrer::check_connection()
 {
 	std::string key;
 	int count;
@@ -174,7 +174,7 @@ bool NetFileTransferer::check_connection()
 }
 
 
-bool NetFileTransferer::info_exchange()
+bool NetFileTransferrer::info_exchange()
 {
 	if (isSource) {
 		TCP_Client* conn = dynamic_cast<TCP_Client*>(this->connector);
@@ -262,13 +262,13 @@ bool NetFileTransferer::info_exchange()
 }
 
 
-void NetFileTransferer::set_chunk_size(uint32_t chunk_size)
+void NetFileTransferrer::set_chunk_size(uint32_t chunk_size)
 {
 	this->size = chunk_size;
 }
 
 
-int NetFileTransferer::receive_chunk(uint32_t limit)
+int NetFileTransferrer::receive_chunk(uint32_t limit)
 {
 	if (isSource)
 		return 0;
@@ -285,7 +285,7 @@ int NetFileTransferer::receive_chunk(uint32_t limit)
 }
 
 
-int NetFileTransferer::send_chunk()
+int NetFileTransferrer::send_chunk()
 {
 	if (!isSource)
 		return 0;
@@ -301,7 +301,7 @@ int NetFileTransferer::send_chunk()
 }
 
 
-uint32_t NetFileTransferer::send() //5...
+uint32_t NetFileTransferrer::send() //5...
 {
 	if (!isSource || total_size == 0)
 		return 0u;
@@ -328,7 +328,7 @@ uint32_t NetFileTransferer::send() //5...
 }
 
 
-uint32_t NetFileTransferer::receive() //5...
+uint32_t NetFileTransferrer::receive() //5...
 {
 	if (isSource || total_size == 0)
 		return 0u;
@@ -352,7 +352,7 @@ uint32_t NetFileTransferer::receive() //5...
 }
 
 
-bool NetFileTransferer::save()
+bool NetFileTransferrer::save()
 {
 	if (isSource)
 		return false;
@@ -370,7 +370,7 @@ bool NetFileTransferer::save()
 }
 
 
-void NetFileTransferer::reset()
+void NetFileTransferrer::reset()
 {
 	fm.reset();
 }

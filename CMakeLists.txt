@@ -17,7 +17,7 @@ include_directories (src/main src/filemanager src/connectors)
 #target_link_libraries (NFT PUBLIC FM Client Server)
 
 #Executables
-add_executable (filetransferer ./src/main/serv.cpp)
-target_link_libraries (filetransferer PUBLIC NFT)
-target_compile_features (filetransferer PUBLIC cxx_std_17)
+add_executable (filetransferrer ./src/main/serv.cpp)
+target_link_libraries (filetransferrer PUBLIC NFT)
+target_compile_features (filetransferrer PUBLIC cxx_std_17)
 
