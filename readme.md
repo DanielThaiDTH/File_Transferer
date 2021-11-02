@@ -1,6 +1,6 @@
 # File Transfer Program
 
-A CLI program I made to transfer files across a local network between Windows systems. 
+A CLI utility I made to transfer files across a local network between Windows systems. 
 
 ## Requirements
 
