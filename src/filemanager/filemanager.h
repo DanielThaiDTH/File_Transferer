@@ -41,6 +41,8 @@ If unable to open, returns false.*/
 	/*Returns string view of given size from saved position.*/
 	std::string_view retrieve(uint32_t size);
 	void place(const char* bytes, uint32_t size);
+
+	/*Opens the file to write, writes and then closes the stream*/
 	bool write();
 	FileManager& operator=(const FileManager&) = delete;
 };

@@ -3,12 +3,11 @@
 
 using namespace std::chrono;
 
-void wait_for(duration<int, std::milli> timeout, bool& toRunning, Connector* connector)
+void wait_for(duration<int, std::milli> timeout, bool& toRunning, TCP_Server* serv)
 {
 	time_point<steady_clock> start = steady_clock::now();
 	time_point<steady_clock> end;
 	duration<int, std::milli> time_elapsed(0);
-	TCP_Server* serv = dynamic_cast<TCP_Server*>(connector);
 
 	while (toRunning && serv) {
 		end = steady_clock::now();
@@ -125,7 +124,7 @@ bool NetFileTransferer::connect()
 		std::thread timeoutTh = std::thread(&wait_for, 
 								duration<int, std::milli>(DEFAULT_TO),
 								std::ref(timeoutRunning),
-								connector);
+								conn);
 		if (conn->getState() == ServerState::LISTENING || conn->await_conn()) {
 			bool connCreated = conn->get_conn(); //1
 			timeoutRunning = false;
@@ -151,11 +150,24 @@ bool NetFileTransferer::check_connection()
 		conn->receive_msg(key); //3
 	} else {
 		TCP_Server* conn = dynamic_cast<TCP_Server*>(this->connector);
+
+		timeoutRunning = true;
+		std::thread timeoutTh = std::thread(&wait_for,
+			duration<int, std::milli>(DEFAULT_TO),
+			std::ref(timeoutRunning),
+			conn);
+
 		count = conn->receive_msg(key); //2
 		conn->send_msg(conn_id); //3
 
-		if (count == 0)
+		timeoutRunning = false;
+		timeoutTh.join();
+
+		if (count == 0 || count == SOCKET_ERROR) {
+			std::cout << "Unknown client or broken connection.\n";
 			conn->disconnect();
+			return false;
+		}
 	}
 
 	return key == conn_id;
@@ -173,7 +185,8 @@ bool NetFileTransferer::info_exchange()
 		std::string filename = fm.getfile();
 		total_size = fm.get_data_size();
 		uint32_t name_size = static_cast<uint32_t>(filename.size()) * sizeof(char);
-		uint32_t packet_size = sizeof(uint32_t) + name_size + sizeof(uint32_t);
+		uint32_t packet_size = sizeof(uint32_t) + name_size + sizeof(uint32_t) 
+							   + (uint32_t)conn_id.size()*sizeof(char);
 		if (packet_size < 4)
 			packet_size = 4;
 		char* packet = new char[packet_size];
@@ -185,10 +198,15 @@ bool NetFileTransferer::info_exchange()
 		std::memcpy(data_ptr, filename.c_str(), filename.size());
 		data_ptr += name_size;
 		std::memcpy(data_ptr, &total_size, sizeof(uint32_t));
+		data_ptr += sizeof(uint32_t);
+		std::memcpy(data_ptr, conn_id.data(), conn_id.size()*sizeof(char));
 		std::vector<char> info(size);
 		info.assign(packet, packet + packet_size);
 		int err = conn->send_msg(info); //4
 		delete[] packet;
+
+		std::string temp;
+		conn->receive_msg(temp); //5, wait for server
 
 		if (err == SOCKET_ERROR || err == 0) {
 			std::cout << "Information unable to be transfered.\n"
@@ -206,9 +224,20 @@ bool NetFileTransferer::info_exchange()
 		std::vector<char> packet;
 		int packet_size = conn->receive_msg(packet); //4
 
-		if (packet_size == 0 || packet_size == SOCKET_ERROR) {
+		//6 is the size of the end identifier
+		if (packet_size < 6 || packet_size == SOCKET_ERROR) {
 			std::cout << "Information unable to be received.\n";
 			return false;
+		} else {
+			std::string end({ packet[packet_size - 1 - 5], packet[packet_size - 1 - 4],
+							  packet[packet_size - 1 - 3], packet[packet_size - 1 - 2],
+							  packet[packet_size - 1 - 1], packet[packet_size - 1]
+				});
+
+			if (end != conn_id) {
+				std::cout << "Error: The end characters " << end << " did not match the connection ID.\n";
+				return false;
+			}
 		}
 
 		const char* data_ptr = packet.data();
@@ -221,6 +250,8 @@ bool NetFileTransferer::info_exchange()
 		data_ptr += name_size * sizeof(char);
 		std::memcpy(&total_size, data_ptr, sizeof(uint32_t));
 		delete[] name;
+
+		conn->send_msg("Confirmed");//5, confirm data sent
 
 		std::cout << "Meta-data received.\n"
 			<< writefile << std::endl

@@ -191,6 +191,7 @@ bool FileManager::write()
 	} else {
 		writestream.write(data, data_len);
 		writestream.flush();
+		writestream.close();	
 
 		return true;
 	}

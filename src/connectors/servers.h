@@ -31,8 +31,10 @@ public:
 	bool bind_socket() override;
 	int change_port(int new_port);
 	
-	/*Sets to listening state. If connect, breaks connection to start listening.*/
+	/*Sets to listening state. If connected, breaks connection to start listening.*/
 	bool await_conn();
+
+	/*Connects to client socket. If connected, sets to connected state.*/
 	bool get_conn();
 
 	/*Closes the active listening socket*/

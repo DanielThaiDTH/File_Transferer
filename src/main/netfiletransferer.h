@@ -11,7 +11,7 @@
 #define NETFILETRANSFER_H
 
 #define DEFAULT_TO 60000
-void wait_for(std::chrono::duration<int, std::milli> timeout, bool& toRunning, Connector* connector);
+void wait_for(std::chrono::duration<int, std::milli> timeout, bool& toRunning, TCP_Server* connector);
 
 /*Transfers a file to a remote address or receives a file from a remote address using TCP.
  If it is a source of the file, it will be a TCP client, otherwise a TCP server.*/

@@ -15,6 +15,7 @@
 
 #define NO_FILES 3
 #define IMPROPER_ARGS 2
+#define LINE_MAX_CHAR 250
 
 void inputValid(std::string prompt)
 {
@@ -81,8 +82,11 @@ std::deque<const char*> readFileList(std::string filename)
 	std::string line;
 	std::deque<const char*> lines;
 
-	while (std::getline(listfile, line)) {
-		lines.push_front(line.c_str());
+	while (std::getline(listfile, line) && line.size() < LINE_MAX_CHAR) {
+		std::cout << line.c_str() << " to be transferred.\n";
+		char* copy = new char[line.size() + 1];
+		std::strcpy(copy, line.c_str());
+		lines.push_back(copy);
 	}
 
 	return lines;
@@ -99,8 +103,9 @@ void destConnectionLoop(NetFileTransferer* nft)
 				std::cout << amount << " bytes received.\n";
 				if (nft->save())
 					std::cout << "File " << nft->get_file() << " written.\n";
+				nft->reset();
 			} else {
-				std::cout << "Could not exhange information.\n";
+				std::cout << "Could not exchange information.\n";
 			}
 		} //File loop
 		std::cout << "Connection terminated by client.\n";
@@ -258,7 +263,7 @@ int main(int argc, const char* argv[])
 	std::deque<const char*> files;
 
 	if (argc > 1 && std::strcmp(args[1], "help") == 0) {
-		std::cout << "Usage: " << args[0] << " [-s]|[-d] [Port] [Address]\n";
+		std::cout << "Usage: " << args[0] << " [-s]|[-d] [Port] [Address] [Files...] [-f filelist_file]\n";
 		std::cout << "Use -s or s to set as a file source. "
 			<< "Use -d or d to set as a file destination. "
 			<< "Can only set source or destination exclusvely. "
@@ -291,7 +296,7 @@ int main(int argc, const char* argv[])
 	} else {
 
 		if (isSrc) {
-			if (argc > 6 && std::strcmp(args[4], "-f"))
+			if (argc > 5 && std::strcmp(args[4], "-f") == 0)
 				files = readFileList(args[5]);
 			else
 				files.assign(args.cbegin() + 4, args.cend());
