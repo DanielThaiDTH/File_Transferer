@@ -20,18 +20,24 @@ public:
 	FileManager(FileManager& src) = delete;
 	FileManager(std::string filepath);
 	~FileManager();
+
 	/*Changes the file for read/write. Will close any open streams and any remaining data.*/
 	void setfile(std::string filepath);
 	std::string getfile() const;
 	void togglemode();
 	bool is_writemode() const;
+
+	/*Reads the file into memory and stores the total size.
+If unable to open, returns false.*/
 	bool read();
 	void reset();
 	uint32_t get_data_size() const;
 	uint32_t get_position() const;
 	void set_position(uint32_t pos);
+
 	/*Returns string view from saved position to end.*/
 	std::string_view retrieve();
+
 	/*Returns string view of given size from saved position.*/
 	std::string_view retrieve(uint32_t size);
 	void place(const char* bytes, uint32_t size);

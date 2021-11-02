@@ -52,6 +52,8 @@ bool FileManager::is_writemode() const
 }
 
 
+/*Reads the file into memory and stores the total size. 
+If unable to open, returns false.*/
 bool FileManager::read()
 {
 	if (writemode)

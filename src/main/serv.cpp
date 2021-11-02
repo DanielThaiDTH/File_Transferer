@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <cstring>
 #include <cstdlib>
 #include <csignal>
@@ -74,6 +75,20 @@ int inputRange(std::string prompt, int min, int max)
 }
 
 
+std::deque<const char*> readFileList(std::string filename)
+{
+	std::ifstream listfile(filename);
+	std::string line;
+	std::deque<const char*> lines;
+
+	while (std::getline(listfile, line)) {
+		lines.push_front(line.c_str());
+	}
+
+	return lines;
+}
+
+
 void destConnectionLoop(NetFileTransferer* nft)
 {
 	while (nft->connect()) {
@@ -143,7 +158,7 @@ int manualOp()
 }
 
 
-int autoOp(bool isSrc, std::deque<char*>& files, int port, std::string addr = "")
+int autoOp(bool isSrc, std::deque<const char*>& files, int port, std::string addr = "")
 {
 	bool isRandPort = false;
 	if (port == 0 && isSrc) {
@@ -229,7 +244,7 @@ int testFunc()
 }
 
 
-int main(int argc, char* argv[])
+int main(int argc, const char* argv[])
 {
 	int exit_code = 0;
 	signal(SIGABRT, stopHandle);
@@ -239,8 +254,8 @@ int main(int argc, char* argv[])
 	std::cout << "*****************************\n";
 	std::cout << "** File Transferer Program **\n";
 	std::cout << "*****************************\n\n";
-	std::vector<char*> args(argv, argv + argc);
-	std::deque<char*> files;
+	std::vector<const char*> args(argv, argv + argc);
+	std::deque<const char*> files;
 
 	if (argc > 1 && std::strcmp(args[1], "help") == 0) {
 		std::cout << "Usage: " << args[0] << " [-s]|[-d] [Port] [Address]\n";
@@ -276,7 +291,11 @@ int main(int argc, char* argv[])
 	} else {
 
 		if (isSrc) {
-			files.assign(args.cbegin() + 4, args.cend());
+			if (argc > 6 && std::strcmp(args[4], "-f"))
+				files = readFileList(args[5]);
+			else
+				files.assign(args.cbegin() + 4, args.cend());
+
 			if (files.size() > 0)
 				exit_code = autoOp(isSrc, files, std::atoi(args[2]), args[3]);
 			else 
